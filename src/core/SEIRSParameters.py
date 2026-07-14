@@ -23,7 +23,9 @@ class SEIRSParameters:
 
     # paramters for heterogeneous beta and gamma
     beta_0: float
+    beta_coeff: float
     gamma_0: float
+    gamma_coeff: float
 
     @property
     def h(self) -> float:
@@ -53,21 +55,21 @@ class SEIRSParameters:
         """Heterogeneous recovery rate. A 2D extension of the 1D function used by Song et al. (2019)"""
         if constant is None:
             constant = self.gamma_0
-        return self.field_perturbated_with_gaussian(mu, sigma, constant)
+        return self.field_perturbated_with_gaussian(mu, sigma, constant, coeff=self.gamma_coeff)
 
     def beta_field(self, mu, sigma, constant = None) -> np.ndarray:
         """Heterogeneous transmission rate, as used by Yang et al. (2021)."""
         if constant is None:
             constant = self.beta_0
-        return self.field_perturbated_with_gaussian(mu, sigma, constant)
+        return self.field_perturbated_with_gaussian(mu, sigma, constant, coeff=self.beta_coeff)
     
-    def field_perturbated_with_gaussian(self, mu:tuple, sigma, constant):
+    def field_perturbated_with_gaussian(self, mu:tuple, sigma, constant, coeff=1.0):
         """
         mu: center in 2D
         sigma: identical in x and y
         """
         X, Y = self.make_grid()
-        B = constant + ( ( 1/sigma**2 )
+        B = constant + coeff*( ( 1/sigma**2 )
                            * np.exp(
                                -( 1/2*sigma**2 ) * ( (X - mu[0])**2 + (Y - mu[1])**2 )
                                 )
