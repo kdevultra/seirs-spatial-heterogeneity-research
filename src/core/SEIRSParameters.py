@@ -1,7 +1,7 @@
 # TODO : To be reviewed
 
 from dataclasses import dataclass
-from numpy import cos, pi
+from numpy import cos, pi, sqrt
 import numpy as np
 
 @dataclass(frozen=True)
@@ -21,10 +21,9 @@ class SEIRSParameters:
     alpha: float # constant
     sigma: float # constant
 
-    # paramters for heterogeneous beta
+    # paramters for heterogeneous beta and gamma
     beta_0: float
-    c1: float
-    c2: float
+    gamma_0: float
 
     @property
     def h(self) -> float:
@@ -35,8 +34,8 @@ class SEIRSParameters:
         # Check that the parameters are valid
         assert self.grid_size > 1, "grid_size must be greater than 1"
         assert self.beta_0 > 0, "beta_0 must be positive"
+        assert self.gamma_0 > 0, "gamma_0 must be positive"
         assert self.sigma > 0, "sigma must be positive"
-        assert 0 < self.c1 < 1 and 0 < self.c2 < 1, "c1 and c2 must be in (0,1)"
         assert self.alpha > 0, "alpha must be positive"
         assert self.N > 0, "N must be positive"
         assert self.dS >= 0 and self.dE >= 0 and self.dI >= 0 and self.dR >= 0, "diffusion rates must be non-negative"
@@ -50,14 +49,29 @@ class SEIRSParameters:
 
     # heterogeneity parameters for beta and gamma fields
 
-    def gamma_field(self) -> np.ndarray:
+    def gamma_field(self, mu, sigma, constant = None) -> np.ndarray:
         """Heterogeneous recovery rate. A 2D extension of the 1D function used by Song et al. (2019)"""
-        X, Y = self.make_grid()
-        return X + Y + 1.0
+        if constant is None:
+            constant = self.gamma_0
+        return self.field_perturbated_with_gaussian(mu, sigma, constant)
 
-    def beta_field(self) -> np.ndarray:
+    def beta_field(self, mu, sigma, constant = None) -> np.ndarray:
         """Heterogeneous transmission rate, as used by Yang et al. (2021)."""
+        if constant is None:
+            constant = self.beta_0
+        return self.field_perturbated_with_gaussian(mu, sigma, constant)
+    
+    def field_perturbated_with_gaussian(self, mu:tuple, sigma, constant):
+        """
+        mu: center in 2D
+        sigma: identical in x and y
+        """
         X, Y = self.make_grid()
-        B = self.beta_0 * (1 + self.c1 * cos(pi * X)) * (1 + self.c2 * cos(pi * Y))
+        B = constant + ( ( 1/sigma**2 )
+                           * np.exp(
+                               -( 1/2*sigma**2 ) * ( (X - mu[0])**2 + (Y - mu[1])**2 )
+                                )
+                        )
         return B
+
 
