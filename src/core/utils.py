@@ -96,7 +96,7 @@ def make_grid(grid_size):
     X, Y = np.meshgrid(x, y, indexing='ij')   # shape (n, n), indexing ij → X[i,j]=x[i]
     return X, Y
 
-def initial_conditions(params, epsilon=0.1, center=(0.1, 0.1), radius=0.08):
+def initial_conditions(params, epsilon=0.05, center=(0.1, 0.1), radius=0.08):
     """
     Build IC vectors satisfying ∫∫(S0+E0+I0+R0)dΩ = N exactly
     under the 2D trapezoidal rule.
