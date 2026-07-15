@@ -100,7 +100,7 @@ def initial_conditions(params, epsilon=0.1, center=(0.1, 0.1), radius=0.08):
     """
     Build IC vectors satisfying ∫∫(S0+E0+I0+R0)dΩ = N exactly
     under the 2D trapezoidal rule.
-    epsilon : prcentage of initial ill people
+    epsilon : fraction of N seeded as initial infected mass
     """
     X, Y = params.make_grid()
     h = params.h
@@ -108,20 +108,28 @@ def initial_conditions(params, epsilon=0.1, center=(0.1, 0.1), radius=0.08):
     # Step 1: localized Gaussian blob centered near the high-risk corner
     dist_sq = (X - center[0])**2 + (Y - center[1])**2
     I_patch = np.exp(-dist_sq / (2 * radius**2))
-    I_patch /= np.trapezoid(np.trapezoid(I_patch, dx=h, axis=1), dx=h)
+    I_patch /= mass(I_patch, h)  # use the same quadrature as everything else
 
-    # Step 2: scale to the requested peak infection amplitude
+    # Step 2: scale to the requested total infected mass
     I0 = epsilon * params.N * I_patch
     E0 = 0.3 * I0
-    R0 = np.zeros_like(I0)
+    Rec0 = np.zeros_like(I0)  # recovered compartment; renamed, R0 means reproduction number here
 
     # Step 3: uniform S0 so that total mass = N exactly
     ones_integral = mass(np.ones_like(I0), h)
-    target_S_mass = params.N - mass(E0 + I0 + R0, h)
+    target_S_mass = params.N - mass(E0 + I0 + Rec0, h)
     S0 = (target_S_mass / ones_integral) * np.ones_like(I0)
 
-    total_mass = mass(S0 + E0 + I0 + R0, h)
+    # Check what actually matters: I0's mass hit the target independent of
+    # the algebraic S0 solve below, which is exact by construction and can't fail.
+    I0_mass_err = abs(mass(I0, h) - epsilon * params.N)
     rel_tol = 1e-6
+    assert I0_mass_err < rel_tol * max(params.N, 1.0), \
+        f"I0 mass error = {I0_mass_err:.2e} " \
+        f"(relative: {I0_mass_err/params.N:.2e}, should be < {rel_tol:.0e}); " \
+        f"check I_patch normalization matches mass()'s quadrature"
+
+    total_mass = mass(S0 + E0 + I0 + Rec0, h)
     assert abs(total_mass - params.N) < rel_tol * max(params.N, 1.0), \
         f"IC mass error = {abs(total_mass - params.N):.2e} " \
         f"(relative: {abs(total_mass - params.N)/params.N:.2e}, should be < {rel_tol:.0e})"
@@ -129,4 +137,4 @@ def initial_conditions(params, epsilon=0.1, center=(0.1, 0.1), radius=0.08):
     assert (S0 > 0).all(), "S0 uniform background went negative — epsilon too large?"
     assert (I0 >= 0).all() and (E0 >= 0).all(), "Positivity violated in I0/E0"
 
-    return np.concatenate([S0.ravel(), E0.ravel(), I0.ravel(), R0.ravel()])
+    return np.concatenate([S0.ravel(), E0.ravel(), I0.ravel(), Rec0.ravel()])
