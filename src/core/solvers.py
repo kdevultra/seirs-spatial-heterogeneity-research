@@ -48,7 +48,7 @@ def compute_mu_star(params: SEIRSParameters, beta_field, gamma_field):
     # Find largest eigenvalue
     # Use eigs with appropriate parameters for better convergence
     try:
-        lambda_max, _ = spla.eigs(K_op, k=1, which='LM', maxiter=1000, tol=1e-6)
+        lambda_max, _ = spla.eigs(K_op, k=1, which='LR', maxiter=1000, tol=1e-6)
         mu_star = 1 / lambda_max[0].real
     except Exception as e:
         print(f"Eigenvalue computation failed: {e}")
