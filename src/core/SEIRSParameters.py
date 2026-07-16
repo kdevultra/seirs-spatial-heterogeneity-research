@@ -69,8 +69,8 @@ class SEIRSParameters:
         sigma: identical in x and y
         """
         X, Y = self.make_grid()
-        B = constant + coeff * ( ( 1/(sigma**2) )
-                           * np.exp(-(1/(2*sigma**2)) * ((X - mu[0])**2 + (Y - mu[1])**2))
+        B = constant + coeff * ( 
+                           np.exp(-(1/(2*sigma**2)) * ((X - mu[0])**2 + (Y - mu[1])**2))
                         )
         return B
 
