@@ -4,50 +4,70 @@ import numpy as np
 from scipy.sparse import bmat, diags
 from scipy.sparse.linalg import eigs
 import scipy.sparse as sp
+import scipy.sparse.linalg as spla
 from scipy.integrate import solve_ivp
 
 import src.core.utils as utils
 from src.core.SEIRSParameters import SEIRSParameters
 
-def compute_mu_star(params:SEIRSParameters, beta_field, gamma_field):
+
+def compute_mu_star(params: SEIRSParameters, beta_field, gamma_field):
     n = params.grid_size
     h = params.h
     M = n**2  # total number of nodes in 2D
 
     # heterogeneous beta and gamma fields and laplacian
     L2D = utils.build_2d_laplacian_neumann(n, n, h)
+    
+    # Ensure beta and gamma are flattened correctly
     beta_field_flat = beta_field.flatten(order='C')
     gamma_field_flat = gamma_field.flatten(order='C')
+    
+    # Create identity matrix
+    e = sp.eye(M, format='csr')  
 
-    e = sp.eye(M)
+    # Build operators
+    Le = -params.dE * L2D + params.sigma * e
+    Li = -params.dI * L2D + sp.diags(gamma_field_flat) 
+    
+    def K_matvec(x):
+        # Ensure x is a 1D array of length M
+        if x.shape != (M,):
+            x = x.flatten()
+            
+        x1 = beta_field_flat * x  
+        x2 = spla.spsolve(Le, x1)
+        x3 = params.sigma * x2 
+        x4 = spla.spsolve(Li, x3)
+        
+        return x4
+    
+    # Create linear operator
+    K_op = spla.LinearOperator(shape=(M, M), matvec=K_matvec, dtype=float)
+    
+    # Find largest eigenvalue
+    # Use eigs with appropriate parameters for better convergence
+    try:
+        lambda_max, _ = spla.eigs(K_op, k=1, which='LM', maxiter=1000, tol=1e-6)
+        mu_star = 1 / lambda_max[0].real
+    except Exception as e:
+        print(f"Eigenvalue computation failed: {e}")
+        # Fallback: use power iteration for largest eigenvalue
+        import numpy as np
+        # Random initial vector
+        v = np.random.rand(M)
+        v = v / np.linalg.norm(v)
+        for _ in range(100):
+            v_new = K_op.matvec(v)
+            v_new = v_new / np.linalg.norm(v_new)
+            v = v_new
+        # Estimate eigenvalue
+        v_next = K_op.matvec(v)
+        lambda_est = np.dot(v, v_next) / np.dot(v, v)
+        mu_star = 1 / lambda_est.real
+    
+    return mu_star
 
-    # Assemble matrix A (2M x 2M) for the eigenvalue problem
-    # System in the form A_block * v = mu * v for positive mu
-    A = -bmat(
-        [
-            [params.dE * L2D - params.sigma*e, diags(beta_field_flat)],
-            [params.sigma*e, params.dI * L2D - diags(gamma_field_flat)]
-        ],
-        format='csr'
-    )
-
-    # eigs may return a variety of typed tuples; avoid direct unpacking for type-checkers
-    res = eigs(A, k=1, which='LR')  # largest real part
-    vals = res[0]
-    vecs = res[1]
-
-    mu_star = vals[0].real
-
-    # eigenvector is of length 2M; split into two blocks of length M
-    #psi_flat = np.real(vecs[:M, 0])
-    #phi_flat = np.real(vecs[M:, 0])
-
-    # normalization so max(psi+phi) = 1
-    #max_val = np.max(psi_flat + phi_flat)
-    #psi_flat /= max_val
-    #phi_flat /= max_val
-
-    return mu_star #, psi_flat, phi_flat
 
 
 def rhs(t, u, params:SEIRSParameters, beta_field, gamma_field):
