@@ -1,6 +1,7 @@
 # TODO : To be reviewed
 
 from dataclasses import dataclass
+from typing import Any
 from numpy import cos, pi, sqrt
 import numpy as np
 
@@ -73,5 +74,4 @@ class SEIRSParameters:
                            np.exp(-(1/(2*sigma**2)) * ((X - mu[0])**2 + (Y - mu[1])**2))
                         )
         return B
-
 
