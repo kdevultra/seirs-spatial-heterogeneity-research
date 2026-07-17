@@ -36,10 +36,10 @@ class SEIRSParameters:
     def __post_init__(self):
         # Check that the parameters are valid
         assert self.grid_size > 1, "grid_size must be greater than 1"
-        assert self.beta_0 > 0, "beta_0 must be positive"
-        assert self.gamma_0 > 0, "gamma_0 must be positive"
-        assert self.sigma > 0, "sigma must be positive"
-        assert self.alpha > 0, "alpha must be positive"
+        assert self.beta_0 >= 0, "beta_0 must be positive"
+        assert self.gamma_0 >= 0, "gamma_0 must be positive"
+        assert self.sigma >= 0, "sigma must be positive"
+        assert self.alpha >= 0, "alpha must be positive"
         assert self.N > 0, "N must be positive"
         assert self.dS >= 0 and self.dE >= 0 and self.dI >= 0 and self.dR >= 0, "diffusion rates must be non-negative"
 
