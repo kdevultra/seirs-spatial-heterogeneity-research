@@ -1,6 +1,11 @@
 # Diffusive SEIRS: spatial heterogeneity and R0
 
-NSRI Summer Research Hackathon 2026
+NSRI Summer Research Hackathon 2026 report (inconclusive, only reporting results)
+
+![Python](https://img.shields.io/badge/python-3.11-blue)
+![Status](https://img.shields.io/badge/status-paused-orange)
+![Hackathon](https://img.shields.io/badge/NSRI%20Summer%20Research%20Hackathon-2026-lightgrey)
+![License](https://img.shields.io/badge/license-unspecified-inactive)
 
 **Track:** AI, Data Science & Computing
 
@@ -57,7 +62,7 @@ R0 is the principal eigenvalue μ\* of the coupled elliptic problem:
 
 with R0 = N / (|Ω| μ\*).
 
-**Perturbation setup:** β = β0 + A*β · Gaussian(x0, σ*β), added to a nonzero uniform background. γ stays uniform for this experiment.
+**Perturbation setup:** β = β0 + A_β · Gaussian(x0, σ_β), added to a nonzero uniform background. γ stays uniform for this experiment.
 
 ## Correctness checks (completed)
 
@@ -71,15 +76,15 @@ All three passed. Additional checks (the off-diagonal mixed regime and flatness 
 
 ## β patch sweep: current state
 
-**Setup:** a dimensionless diffusion parameter ε = sqrt(d/γ0) / σ*β was used to compare diffusion length against patch width, with d = d_E = d_I swept along the diagonal. Five target values, ε = 0.1, 0.3, 1, 3, 10, each converted to a corresponding d. At each ε, A*β and σ*β were swept over a grid, and R0 was fit against two candidate laws: linear in A*β (predicted for the localized/peak dominated regime) and linear in A*β·σ*β² (predicted for the well mixed/mass dominated regime).
+**Setup:** a dimensionless diffusion parameter ε = sqrt(d/γ0) / σ_β was used to compare diffusion length against patch width, with d = d_E = d_I swept along the diagonal. Five target values, ε = 0.1, 0.3, 1, 3, 10, each converted to a corresponding d. At each ε, A_β and σ_β were swept over a grid, and R0 was fit against two candidate laws: linear in A_β (predicted for the localized/peak dominated regime) and linear in A_β·σ_β² (predicted for the well mixed/mass dominated regime).
 
 **Result:** the peak law fit R0 well at every ε tested (R² approximately 0.99 to 1.0, from ε = 0.1 through ε = 10). The mass law fit poorly throughout (R² approximately 0.35 to 0.39) and did not improve with increasing ε. No crossover was observed within the tested range.
 
-**Diagnosis:** ε as defined compares diffusion length to patch width (σ*β), which governs when the patch itself gets smeared out. It does not directly track when the eigenfunction becomes flat across the whole domain, which is what the well mixed limit actually requires. That second comparison is ε_domain = sqrt(d/γ0) / L. Because σ*β was deliberately kept much smaller than L (to avoid boundary contamination, per the numerical validation plan), ε_domain stayed well below 1 across the entire tested range, even at ε = 10. In other words, the sweep likely smeared the patch without ever approaching genuine domain scale mixing.
+**Diagnosis:** ε as defined compares diffusion length to patch width (σ_β), which governs when the patch itself gets smeared out. It does not directly track when the eigenfunction becomes flat across the whole domain, which is what the well mixed limit actually requires. That second comparison is ε_domain = sqrt(d/γ0) / L. Because σ_β was deliberately kept much smaller than L (to avoid boundary contamination, per the numerical validation plan), ε_domain stayed well below 1 across the entire tested range, even at ε = 10. In other words, the sweep likely smeared the patch without ever approaching genuine domain scale mixing.
 
 ## Conclusion of this step
 
-The hypothesized crossover was not observed, but the diagnosis above means this is inconclusive rather than a negative result: absence of evidence within an apparently undertested diffusion range, not evidence of absence. This has not yet been confirmed directly. The next required step, before any claim about the crossover's existence or shape, is a direct diagnostic: fix one (A*β, σ*β) pair and sweep d over a much wider range, explicitly pushing ε_domain past 1, and check whether R0 moves toward the well mixed formula. That work is scoped for future work rather than continued here.
+The hypothesized crossover was not observed, but the diagnosis above means this is inconclusive rather than a negative result: absence of evidence within an apparently undertested diffusion range, not evidence of absence. This has not yet been confirmed directly. The next required step, before any claim about the crossover's existence or shape, is a direct diagnostic: fix one (A_β, σ_β) pair and sweep d over a much wider range, explicitly pushing ε_domain past 1, and check whether R0 moves toward the well mixed formula. That work is scoped for future work rather than continued here.
 
 ## Limitations, known going in
 
@@ -90,7 +95,7 @@ The hypothesized crossover was not observed, but the diagnosis above means this 
 
 ## Future work
 
-- Direct wide range diagnostic: sweep d alone at fixed (A*β, σ*β), reaching ε_domain well past 1, to determine whether the crossover appears once the range is corrected.
+- Direct wide range diagnostic: sweep d alone at fixed (A_β, σ_β), reaching ε_domain well past 1, to determine whether the crossover appears once the range is corrected.
 - Remaining correctness checks: the off-diagonal mixed regime and R0 flatness under d_S, d_R perturbation.
 - Grid convergence check on a representative sweep point.
 - γ patch sweep (same battery as the β sweep, on γ instead), and comparison of crossover shape between the two, since γ enters the eigenvalue problem as a subtracted diagonal term rather than a multiplicative coupling.
